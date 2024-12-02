@@ -1,0 +1,53 @@
+name: Benchmarking
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    branches: [main]
+    types:
+      - completed
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bench:
+    name: Benchmarking
+    runs-on: ubuntu-latest
+    if: ${{ vars.AOC_ENABLED == 'true' }}
+    permissions:
+      contents: write
+    timeout-minutes: 5 # If it takes longer, the code isn't efficient enough, so give up.
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: 'main'
+    - name: setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        check-latest: true
+    - name: download Python modules
+      run: python -m pip install requests
+    - name: download inputs
+      run: python ./.github/workflows/download_inputs.py
+      env:
+        SESSION_COOKIE: ${{ secrets.AOC_SESSION }}
+        YEAR: ${{ secrets.AOC_YEAR }}
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+    - name: cargo time
+      run: cargo time --store
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "update benchmark timings"
