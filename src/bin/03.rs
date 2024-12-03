@@ -14,7 +14,26 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let mut product = 0;
+    let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|(do)\(\)|(don't)\(\)").unwrap();
+    let mut _do: bool = true;
+    for cap in re.captures_iter(input) {
+        if let Some(_) = cap.get(1){
+            if _do{
+                let num1: u32 = cap[1].parse().unwrap();
+                let num2: u32 = cap[2].parse().unwrap();
+                product += num1 * num2;
+            }
+        }
+        else if let Some(_) = cap.get(3){
+            _do = true;
+        }
+        else if let Some(_) = cap.get(4){
+            _do = false;
+        }
+    }
+
+    Some(product)
 }
 
 #[cfg(test)]
