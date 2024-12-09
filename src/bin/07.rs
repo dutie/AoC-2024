@@ -45,7 +45,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(sum)
 }
 
-pub fn conc(a: u64, b: u64) -> u64{
+pub fn conc(a: u64, b: u64) -> u64 {
     a as u64 * 10u64.pow(b.ilog10() + 1) + b as u64
 }
 
@@ -71,7 +71,6 @@ pub fn part_two(input: &str) -> Option<u64> {
                     2 => total = conc(total, next),
                     _ => unreachable!(),
                 }
-
             }
 
             if total == result {
