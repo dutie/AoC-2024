@@ -1,4 +1,4 @@
-use std::{collections::HashSet, env::current_dir};
+use std::{collections::HashSet, env::current_dir, io, usize};
 advent_of_code::solution!(6);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -7,7 +7,7 @@ struct Position {
     y: i32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Direction {
     Up,
     Right,
@@ -42,6 +42,32 @@ struct Map {
 }
 
 impl Map {
+    fn to_string_with_path(&self, path: &[(Position, Direction)]) -> String {
+        let mut output = Vec::new();
+
+        for y in 0..self.height {
+            let mut row = String::new();
+            for x in 0..self.width {
+                let pos = Position { x, y };
+
+                if let Some(idx) = path.iter().position(|(p, _)| *p == pos) {
+                    let (_, dir) = path[idx];
+                    let symbol = match dir {
+                        Direction::Up => '^',
+                        Direction::Right => '>',
+                        Direction::Down => 'v',
+                        Direction::Left => '<',
+                    };
+                    row.push(symbol);
+                } else {
+                    row.push(self.grid[y as usize][x as usize]);
+                }
+            }
+            output.push(row);
+        }
+
+        output.join("\n")
+    }
     fn new(input: &str) -> (Self, Position, Direction) {
         let grid: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
         let height = grid.len() as i32;
@@ -103,13 +129,13 @@ impl Map {
             return true;
         }
         self.grid[pos.y as usize][pos.x as usize] == '#'
+            || self.grid[pos.y as usize][pos.x as usize] == 'O'
     }
 
     fn is_out_of_bounds(&self, pos: &Position) -> bool {
         pos.x < 0 || pos.y < 0 || pos.x >= self.width || pos.y >= self.height
     }
 }
-
 pub fn part_one(input: &str) -> Option<u32> {
     let (map, mut current_pos, mut current_dir) = Map::new(input);
     let mut visited = HashSet::new();
@@ -140,15 +166,23 @@ pub fn part_two(input: &str) -> Option<u32> {
     let (mut map, start_pos, start_dir) = Map::new(input);
     let original_path = get_original_path(&map, start_pos, start_dir);
     let mut possible_positions = 0;
+    let mut visited_obstacles = Vec::new();
 
     for pos in original_path {
-        if pos == start_pos {
+        if pos == start_pos
+            || map.grid[pos.y as usize][pos.x as usize] == '#'
+            || map.grid[pos.y as usize][pos.x as usize] == 'O'
+        {
             continue;
         }
+        let tup = (pos.x, pos.y);
+        if visited_obstacles.contains(&tup) {
+            continue;
+        }
+        map.grid[pos.y as usize][pos.x as usize] = 'O';
+        visited_obstacles.push(tup);
 
-        map.grid[pos.y as usize][pos.x as usize] = '#';
-
-        if has_cycle_simple(&map, start_pos, start_dir) {
+        if has_cycle(&map, start_pos, start_dir) {
             possible_positions += 1;
         }
         map.grid[pos.y as usize][pos.x as usize] = '.';
@@ -279,6 +313,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(5));
     }
 }
