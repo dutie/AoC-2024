@@ -18,14 +18,15 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     for (result, numbers) in input_parsed {
         let n = numbers.len() - 1;
+
         for mask in 0..(1 << n) {
             let mut total = numbers[0];
 
             for i in 0..n {
-                let next = numbers[i + 1];
-                if total+next > result {
+                if total > result {
                     break;
                 }
+                let next = numbers[i + 1];
 
                 if (mask >> i) & 1 == 1 {
                     total *= next;
@@ -43,13 +44,8 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     Some(sum)
 }
-<<<<<<< HEAD
-#[inline]
-pub fn conc(a: u64, b: u64) -> u64{
-=======
 
 pub fn conc(a: u64, b: u64) -> u64 {
->>>>>>> 5589559e383560f988368a95a56b22891013ea8d
     a as u64 * 10u64.pow(b.ilog10() + 1) + b as u64
 }
 
@@ -69,10 +65,10 @@ pub fn part_two(input: &str) -> Option<u64> {
                 }
                 let next = numbers[i + 1];
 
-                total = match (mask / 3_u64.pow(i as u32)) % 3 {
-                    0 => total + next,
-                    1 => total * next,
-                    2 => conc(total, next),
+                match (mask / 3_u64.pow(i as u32)) % 3 {
+                    0 => total += next,
+                    1 => total *= next,
+                    2 => total = conc(total, next),
                     _ => unreachable!(),
                 }
             }
