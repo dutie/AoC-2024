@@ -43,13 +43,8 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     Some(sum)
 }
-<<<<<<< HEAD
-#[inline]
-pub fn conc(a: u64, b: u64) -> u64{
-=======
 
 pub fn conc(a: u64, b: u64) -> u64 {
->>>>>>> 5589559e383560f988368a95a56b22891013ea8d
     a as u64 * 10u64.pow(b.ilog10() + 1) + b as u64
 }
 

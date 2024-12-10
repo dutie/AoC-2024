@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-advent_of_code::solution!(8);
-
-pub fn part_one(input: &str) -> Option<u32> {
-    None
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    None
-=======
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 advent_of_code::solution!(8);
@@ -94,7 +84,6 @@ pub fn part_two(input: &str) -> Option<u32> {
     }
 
     Some(antinodes.len() as u32)
->>>>>>> 5589559e383560f988368a95a56b22891013ea8d
 }
 
 #[cfg(test)]
