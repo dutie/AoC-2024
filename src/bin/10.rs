@@ -1,32 +1,26 @@
 advent_of_code::solution!(10);
-use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-struct Position {
-    x: usize,
-    y: usize,
-}
+struct Position(usize);
 
 struct Grid {
-    data: Vec<Vec<u8>>,
+    data: Vec<u8>,
     width: usize,
     height: usize,
 }
 
 impl Grid {
     fn parse(input: &str) -> Self {
-        let data: Vec<Vec<u8>> = input
-            .lines()
-            .filter(|line| !line.is_empty())
-            .map(|line| {
-                line.chars()
-                    .map(|c| c.to_digit(10).unwrap() as u8)
-                    .collect()
-            })
-            .collect();
+        let mut data = Vec::with_capacity(input.len() / 2);
+        let mut width = 0;
+        let mut height = 0;
         
-        let height = data.len();
-        let width = data.first().map_or(0, |row| row.len());
+        for line in input.lines() {
+            if line.is_empty() { continue; }
+            if width == 0 { width = line.len(); }
+            height += 1;
+            data.extend(line.bytes().map(|b| b - b'0'));
+        }
         
         Grid {
             data,
@@ -35,60 +29,59 @@ impl Grid {
         }
     }
     
+    #[inline(always)]
+    fn idx_to_pos(&self, idx: usize) -> (usize, usize) {
+        (idx % self.width, idx / self.width)
+    }
+    
     fn find_trailheads(&self) -> Vec<Position> {
-        let mut trailheads = Vec::new();
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if self.data[y][x] == 0 {
-                    trailheads.push(Position { x, y });
-                }
-            }
-        }
-        trailheads
+        self.data.iter()
+            .enumerate()
+            .filter(|&(_, &height)| height == 0)
+            .map(|(idx, _)| Position(idx))
+            .collect()
     }
     
-    fn height_at(&self, pos: &Position) -> u8 {
-        self.data[pos.y][pos.x]
+    #[inline(always)]
+    fn height_at(&self, pos: Position) -> u8 {
+        self.data[pos.0]
     }
     
-    fn get_neighbors(&self, pos: &Position) -> Vec<Position> {
-        let mut neighbors = Vec::new();
-        let x = pos.x;
-        let y = pos.y;
+    #[inline(always)]
+    fn get_neighbors(&self, pos: Position) -> impl Iterator<Item = Position> + '_ {
+        let (x, y) = self.idx_to_pos(pos.0);
+        let width = self.width;
+        let idx = pos.0;
         
-        if y > 0 {
-            neighbors.push(Position { x, y: y - 1 });
-        }
-        if x > 0 {
-            neighbors.push(Position { x: x - 1, y });
-        }
-        if y + 1 < self.height {
-            neighbors.push(Position { x, y: y + 1 });
-        }
-        if x + 1 < self.width {
-            neighbors.push(Position { x: x + 1, y });
-        }
-        
-        neighbors
+        [
+            if y > 0 { Some(idx - width) } else { None },
+            if x > 0 { Some(idx - 1) } else { None },
+            if y + 1 < self.height { Some(idx + width) } else { None },
+            if x + 1 < self.width { Some(idx + 1) } else { None }
+        ].into_iter()
+        .flatten()
+        .map(Position)
     }
 }
 
-fn find_paths(grid: &Grid, start: Position) -> HashSet<Position> {
-    let mut reachable_nines = HashSet::new();
-    let mut visited = HashSet::new();
-    let mut stack = vec![(start, grid.height_at(&start))];
-    visited.insert(start);
+fn find_paths(grid: &Grid, start: Position) -> usize {
+    let mut reachable_nines = 0;
+    let mut visited = vec![false; grid.data.len()];
+    let mut stack = Vec::with_capacity(grid.width.max(grid.height));
+    
+    visited[start.0] = true;
+    stack.push((start, grid.height_at(start)));
     
     while let Some((pos, height)) = stack.pop() {
-        if grid.height_at(&pos) == 9 {
-            reachable_nines.insert(pos);
+        if grid.height_at(pos) == 9 {
+            reachable_nines += 1;
             continue;
         }
         
-        for neighbor in grid.get_neighbors(&pos) {
-            if !visited.contains(&neighbor) && grid.height_at(&neighbor) == height + 1 {
-                visited.insert(neighbor);
-                stack.push((neighbor, grid.height_at(&neighbor)));
+        for neighbor in grid.get_neighbors(pos) {
+            if !visited[neighbor.0] && grid.height_at(neighbor) == height + 1 {
+                visited[neighbor.0] = true;
+                stack.push((neighbor, grid.height_at(neighbor)));
             }
         }
     }
@@ -98,16 +91,14 @@ fn find_paths(grid: &Grid, start: Position) -> HashSet<Position> {
 
 pub fn part_one(input: &str) -> Option<u32> {
     let grid = Grid::parse(input);
-    let trailheads = grid.find_trailheads();
     
-    let total_score: usize = trailheads
+    let total_score = grid.find_trailheads()
         .into_iter()
-        .map(|start| find_paths(&grid, start).len())
-        .sum();
+        .map(|start| find_paths(&grid, start))
+        .sum::<usize>();
     
     Some(total_score as u32)
 }
-
 pub fn part_two(input: &str) -> Option<u32> {
     None
 }
