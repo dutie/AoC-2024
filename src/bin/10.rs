@@ -89,6 +89,27 @@ fn find_paths(grid: &Grid, start: Position) -> usize {
     reachable_nines
 }
 
+fn find_ratings(grid: &Grid, start: Position) -> usize {
+    let mut reachable_nines = 0;
+    let mut stack = Vec::with_capacity(grid.width.max(grid.height));
+    
+    stack.push((start, grid.height_at(start)));
+    
+    while let Some((pos, height)) = stack.pop() {
+        if grid.height_at(pos) == 9 {
+            reachable_nines += 1;
+            continue;
+        }
+        
+        for neighbor in grid.get_neighbors(pos) {
+            if grid.height_at(neighbor) == height + 1 {
+                stack.push((neighbor, grid.height_at(neighbor)));
+            }
+        }
+    }
+    
+    reachable_nines
+}
 pub fn part_one(input: &str) -> Option<u32> {
     let grid = Grid::parse(input);
     
@@ -100,7 +121,14 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(total_score as u32)
 }
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let grid = Grid::parse(input);
+    
+    let total_score = grid.find_trailheads()
+        .into_iter()
+        .map(|start| find_ratings(&grid, start))
+        .sum::<usize>();
+    
+    Some(total_score as u32)
 }
 
 #[cfg(test)]
